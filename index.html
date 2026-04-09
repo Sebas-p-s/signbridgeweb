@@ -896,7 +896,7 @@
 <section id="borrado">
   <div class="section-tag">04 — DML</div>
   <h2 class="section-title">Procedimientos de Borrado</h2>
-  <p class="section-desc">Los DELETE se ejecutan en orden inverso a la creación de tablas (de tablas hijo a tablas padre), respetando las restricciones de integridad referencial.</p>
+  <p class="section-desc">Los DELETE se ejecutan en orden inverso a la creación de tablas (de tablas hijo a tablas padre), respetando las restricciones de integridad referencial. Cada sentencia usa <code>WHERE</code> con un criterio de negocio concreto para identificar los registros a eliminar.</p>
 
   <div class="delete-order reveal">
     <h4>⚠ Orden de Eliminación (tablas hijo → tablas padre)</h4>
@@ -928,44 +928,135 @@
   </div>
 
   <div class="sql-block reveal">
-    <div class="sql-header"><h4>Eliminación física en orden seguro (2 registros por tabla)</h4><span class="sql-label lbl-delete">DELETE</span></div>
-    <pre><span class="cm">-- Tablas sin dependencias internas</span>
-<span class="kw">DELETE FROM</span> <span class="tbl">EntradaVoz</span>    <span class="kw">ORDER BY</span> id_entrada_voz   <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">EntradaVoz</span>    <span class="kw">ORDER BY</span> id_entrada_voz   <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">EntradaSenas</span>  <span class="kw">ORDER BY</span> id_entrada_senas <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">EntradaSenas</span>  <span class="kw">ORDER BY</span> id_entrada_senas <span class="kw">LIMIT</span> <span class="num">1</span>;
+    <div class="sql-header"><h4>4.1 Eliminar entradas de voz sin audio cargado</h4><span class="sql-label lbl-delete">DELETE</span></div>
+    <pre><span class="cm">-- Entradas de voz cuyo archivo de audio no fue cargado (NULL)</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">EntradaVoz</span>
+<span class="kw">WHERE</span> url_audio <span class="op-null">IS NULL</span>;
 
-<span class="cm">-- Tablas asociativas</span>
-<span class="kw">DELETE FROM</span> <span class="tbl">TraduccionDetalle</span>  <span class="kw">ORDER BY</span> id_detalle   <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">TraduccionDetalle</span>  <span class="kw">ORDER BY</span> id_detalle   <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">Feedback</span>           <span class="kw">ORDER BY</span> id_feedback  <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">Feedback</span>           <span class="kw">ORDER BY</span> id_feedback  <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">Soporte</span>            <span class="kw">ORDER BY</span> id_soporte   <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">Soporte</span>            <span class="kw">ORDER BY</span> id_soporte   <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">PalabrasFavoritas</span>  <span class="kw">ORDER BY</span> id_favorito  <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">PalabrasFavoritas</span>  <span class="kw">ORDER BY</span> id_favorito  <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">LogAcceso</span>          <span class="kw">ORDER BY</span> id_log       <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">LogAcceso</span>          <span class="kw">ORDER BY</span> id_log       <span class="kw">LIMIT</span> <span class="num">1</span>;
-
-<span class="cm">-- Tablas que dependen de Usuario</span>
-<span class="kw">DELETE FROM</span> <span class="tbl">SesionTraduccion</span>       <span class="kw">ORDER BY</span> id_sesion       <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">SesionTraduccion</span>       <span class="kw">ORDER BY</span> id_sesion       <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">SignAvatarConfig</span>        <span class="kw">ORDER BY</span> id_sing_avatar  <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">SignAvatarConfig</span>        <span class="kw">ORDER BY</span> id_sing_avatar  <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">ConfiguracionDispositivo</span><span class="kw">ORDER BY</span> id_config       <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">ConfiguracionDispositivo</span><span class="kw">ORDER BY</span> id_config       <span class="kw">LIMIT</span> <span class="num">1</span>;
-
-<span class="cm">-- Tablas raíz</span>
-<span class="kw">DELETE FROM</span> <span class="tbl">Usuario</span>         <span class="kw">ORDER BY</span> id_usuario    <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">Usuario</span>         <span class="kw">ORDER BY</span> id_usuario    <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">Rol</span>             <span class="kw">ORDER BY</span> id_rol        <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">Rol</span>             <span class="kw">ORDER BY</span> id_rol        <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">LexicalUni</span>      <span class="kw">ORDER BY</span> id_LexicalUni <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">LexicalUni</span>      <span class="kw">ORDER BY</span> id_LexicalUni <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">LogErrorSistema</span> <span class="kw">ORDER BY</span> id_error      <span class="kw">LIMIT</span> <span class="num">1</span>;
-<span class="kw">DELETE FROM</span> <span class="tbl">LogErrorSistema</span> <span class="kw">ORDER BY</span> id_error      <span class="kw">LIMIT</span> <span class="num">1</span>;</pre>
-    <div class="sql-reason"><strong>¿Por qué este orden?</strong> Eliminar primero las tablas hijo evita errores de integridad referencial. Se usan 2 DELETE con <code>LIMIT 1</code> en lugar de <code>LIMIT 2</code> para evitar eliminaciones masivas accidentales. En producción se preferiría soft delete mediante <code>deleted_at</code>.</div>
+<span class="cm">-- Entradas de voz sin transcripción generada por el motor STT</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">EntradaVoz</span>
+<span class="kw">WHERE</span> texto_generado <span class="op-null">IS NULL</span>;</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Elimina entradas de voz incompletas que no tienen archivo de audio ni transcripción: registros que no aportan valor al sistema y ocupan espacio innecesario. Criterio de negocio: una entrada sin audio o sin texto generado no puede ser traducida.</div>
   </div>
+
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>4.2 Eliminar entradas de señas sin video</h4><span class="sql-label lbl-delete">DELETE</span></div>
+    <pre><span class="cm">-- Entradas de señas sin video adjunto</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">EntradaSenas</span>
+<span class="kw">WHERE</span> url_video <span class="op-null">IS NULL</span>;
+
+<span class="cm">-- Entradas de señas sin texto reconocido por la IA</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">EntradaSenas</span>
+<span class="kw">WHERE</span> texto_generado <span class="op-null">IS NULL</span>;</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Depura entradas de señas vacías que el modelo de IA no pudo procesar. Sin video ni texto reconocido, estos registros son inútiles para el entrenamiento del modelo y para la auditoría de calidad.</div>
+  </div>
+
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>4.3 Eliminar detalles de traducción con orden inválido</h4><span class="sql-label lbl-delete">DELETE</span></div>
+    <pre><span class="cm">-- Detalles con posición 0 (orden inválido en la oración traducida)</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">TraduccionDetalle</span>
+<span class="kw">WHERE</span> orden = <span class="num">0</span>;
+
+<span class="cm">-- Detalles con posición negativa (error de inserción)</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">TraduccionDetalle</span>
+<span class="kw">WHERE</span> orden &lt; <span class="num">0</span>;</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> El campo <code>orden</code> define la posición de cada unidad léxica en la oración. Un valor de 0 o negativo indica un error de inserción: el sistema usa posiciones a partir de 1, por lo que estos registros romperían la reconstrucción correcta de la oración traducida.</div>
+  </div>
+
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>4.4 Eliminar feedback con calificación fuera de rango</h4><span class="sql-label lbl-delete">DELETE</span></div>
+    <pre><span class="cm">-- Feedback con calificación menor a 1 (datos corruptos)</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">Feedback</span>
+<span class="kw">WHERE</span> calificacion &lt; <span class="num">1</span>;
+
+<span class="cm">-- Feedback con calificación mayor a 5 (fuera del rango permitido)</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">Feedback</span>
+<span class="kw">WHERE</span> calificacion &gt; <span class="num">5</span>;</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> La escala de calificación válida es de 1 a 5. Registros con valores fuera de ese rango son datos corruptos o errores de ingreso que distorsionarían el promedio de satisfacción y los reportes de analítica del sistema.</div>
+  </div>
+
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>4.5 Eliminar tickets de soporte ya resueltos sin asunto</h4><span class="sql-label lbl-delete">DELETE</span></div>
+    <pre><span class="cm">-- Tickets resueltos sin asunto registrado (incompletos)</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">Soporte</span>
+<span class="kw">WHERE</span> estado = <span class="str">'resuelto'</span>
+  <span class="kw">AND</span> asunto <span class="op-null">IS NULL</span>;
+
+<span class="cm">-- Tickets resueltos sin mensaje del usuario</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">Soporte</span>
+<span class="kw">WHERE</span> estado = <span class="str">'resuelto'</span>
+  <span class="kw">AND</span> mensaje <span class="op-null">IS NULL</span>;</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Los tickets resueltos sin asunto ni mensaje son registros vacíos que no aportan información histórica al equipo de soporte. Solo se eliminan los ya resueltos para no afectar tickets activos que puedan estar en proceso de llenado.</div>
+  </div>
+
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>4.6 Eliminar palabras favoritas sin uso</h4><span class="sql-label lbl-delete">DELETE</span></div>
+    <pre><span class="cm">-- Favoritos que nunca fueron utilizados por el usuario</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">PalabrasFavoritas</span>
+<span class="kw">WHERE</span> veces_usado = <span class="num">0</span>;
+
+<span class="cm">-- Favoritos marcados como eliminados lógicamente</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">PalabrasFavoritas</span>
+<span class="kw">WHERE</span> deleted_at <span class="op-null">IS NOT NULL</span>;</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Palabras favoritas con <code>veces_usado = 0</code> fueron marcadas pero nunca usadas, lo cual distorsiona el algoritmo de sugerencias. Los registros con <code>deleted_at</code> definido ya estaban marcados para eliminación lógica y se purgan definitivamente.</div>
+  </div>
+
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>4.7 Eliminar logs de accesos fallidos</h4><span class="sql-label lbl-delete">DELETE</span></div>
+    <pre><span class="cm">-- Logs de intentos fallidos de acceso (limpieza periódica)</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">LogAcceso</span>
+<span class="kw">WHERE</span> tipo_acceso = <span class="str">'intento_fallido'</span>;
+
+<span class="cm">-- Logs marcados como eliminados lógicamente</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">LogAcceso</span>
+<span class="kw">WHERE</span> deleted_at <span class="op-null">IS NOT NULL</span>;</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Los intentos fallidos acumulados pueden ser depurados periódicamente tras su análisis de seguridad. Mantenerlos indefinidamente hincha la tabla sin beneficio operativo. Los registros con <code>deleted_at</code> ya fueron auditados y pueden ser purgar del sistema.</div>
+  </div>
+
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>4.8 Eliminar sesiones de traducción con error</h4><span class="sql-label lbl-delete">DELETE</span></div>
+    <pre><span class="cm">-- Sesiones que terminaron en error y ya fueron revisadas</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">SesionTraduccion</span>
+<span class="kw">WHERE</span> estado = <span class="str">'error'</span>;
+
+<span class="cm">-- Sesiones marcadas como eliminadas lógicamente</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">SesionTraduccion</span>
+<span class="kw">WHERE</span> deleted_at <span class="op-null">IS NOT NULL</span>;</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Las sesiones con estado <code>'error'</code> son traducciones fallidas que no generaron resultado útil para el usuario. Después de ser analizadas por el equipo técnico, pueden eliminarse para liberar espacio y mantener limpia la tabla transaccional.</div>
+  </div>
+
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>4.9 Eliminar configuraciones de avatar y dispositivo sin usar</h4><span class="sql-label lbl-delete">DELETE</span></div>
+    <pre><span class="cm">-- Avatares con estilo nulo (nunca configurados)</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">SignAvatarConfig</span>
+<span class="kw">WHERE</span> estilo_avatar <span class="op-null">IS NULL</span>;
+
+<span class="cm">-- Configuraciones de dispositivo sin versión de Android registrada</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">ConfiguracionDispositivo</span>
+<span class="kw">WHERE</span> version_android <span class="op-null">IS NULL</span>;</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Configuraciones de avatar sin estilo y dispositivos sin versión de Android son registros generados automáticamente pero nunca completados por el usuario. Son filas vacías que ocupan espacio sin ofrecer valor funcional al sistema.</div>
+  </div>
+
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>4.10 Eliminar usuarios inactivos y roles obsoletos</h4><span class="sql-label lbl-delete">DELETE</span></div>
+    <pre><span class="cm">-- Usuarios marcados como eliminados lógicamente (soft delete)</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">Usuario</span>
+<span class="kw">WHERE</span> deleted_at <span class="op-null">IS NOT NULL</span>;
+
+<span class="cm">-- Roles que ya no existen en el sistema</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">Rol</span>
+<span class="kw">WHERE</span> nombre_rol = <span class="str">'invitado'</span>;
+
+<span class="cm">-- Vocabulario marcado como eliminado lógicamente</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">LexicalUni</span>
+<span class="kw">WHERE</span> deleted_at <span class="op-null">IS NOT NULL</span>;
+
+<span class="cm">-- Errores del sistema ya resueltos (módulo dado de baja)</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">LogErrorSistema</span>
+<span class="kw">WHERE</span> modulo = <span class="str">'legacy_stt'</span>;</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Fase final de limpieza: se purgan usuarios previamente marcados con soft delete, el rol <code>'invitado'</code> que fue retirado del sistema, vocabulario obsoleto y errores de módulos ya desactivados. Siempre se eliminan las tablas raíz al final para no romper la integridad referencial.</div>
+  </div>
+
 </section>
 
 <hr class="divider">
