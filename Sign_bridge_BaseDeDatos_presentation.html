@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Presentación de Base de Datos - Sign_bridge</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'base', securityLevel: 'loose' });</script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f6fb; color: #1c1f2b; }
+    header { background: linear-gradient(135deg, #0f5dbb, #3465a4); color: white; padding: 36px 32px; }
+    header h1 { margin: 0 0 12px; font-size: 2.4rem; }
+    header p { margin: 0; font-size: 1.05rem; opacity: 0.9; }
+    main { padding: 32px; max-width: 1200px; margin: auto; }
+    section { background: white; border-radius: 18px; box-shadow: 0 18px 34px rgba(14, 36, 96, 0.08); margin-bottom: 28px; padding: 28px; }
+    section h2 { margin-top: 0; color: #173b7f; }
+    section h3 { margin: 18px 0 10px; color: #2c436b; }
+    p { line-height: 1.75; }
+    .grid { display: grid; gap: 18px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+    .card { border: 1px solid #dce2f0; border-radius: 12px; padding: 18px; background: #fff; }
+    .card strong { display: block; margin-bottom: 8px; color: #0f4c9c; }
+    .code-block { background: #0b1430; color: #d8eef7; padding: 20px; border-radius: 14px; overflow-x: auto; font-family: 'Courier New', monospace; font-size: 0.95rem; }
+    .small { color: #5f6b86; font-size: 0.95rem; }
+    .mermaid { background: #ffffff; border-radius: 18px; padding: 18px; }
+    ul { margin: 0 0 1rem 1.2rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Presentación de la Base de Datos Sign_bridge</h1>
+    <p>Análisis del modelo, estructura de tablas y relaciones con diagrama gráfico en HTML.</p>
+  </header>
+  <main>
+    <section>
+      <h2>Resumen general</h2>
+      <p>La base de datos <strong>Sign_bridge</strong> está diseñada para una aplicación de traducción entre lenguaje de señas y texto/voz. Se trata de un modelo relacional MySQL orientado a sesiones de traducción, usuarios, multimedia y soporte.</p>
+      <p>El modelo incluye 15 tablas principales, con especial foco en:</p>
+      <ul>
+        <li>Gestión de usuarios y permisos (<strong>Usuario</strong>, <strong>Rol</strong>, <strong>Region</strong>).</li>
+        <li>Gestión de sesiones de traducción (<strong>SesionTraduccion</strong>, <strong>EntradaVoz</strong>, <strong>EntradaSenas</strong>).</li>
+        <li>Soporte de vocabulario y traducciones (<strong>LexicalUni</strong>, <strong>TraduccionDetalle</strong>, <strong>PalabrasFavoritas</strong>).</li>
+        <li>Configuración personalizada (<strong>SignAvatarConfig</strong>, <strong>ConfiguracionDispositivo</strong>).</li>
+        <li>Auditoría y operaciones de soporte (<strong>Feedback</strong>, <strong>Soporte</strong>, <strong>LogAcceso</strong>, <strong>LogErrorSistema</strong>).</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Estructura de tablas</h2>
+      <div class="cards">
+        <div class="card">
+          <strong>Rol</strong>
+          <p>Almacena los roles del sistema. Es tabla raíz sin dependencias y permite administrar permisos de usuarios.</p>
+        </div>
+        <div class="card">
+          <strong>Region</strong>
+          <p>Define regiones geográficas de Colombia para asociar usuarios a ciudad y departamento.</p>
+        </div>
+        <div class="card">
+          <strong>Usuario</strong>
+          <p>Tabla central. Relaciona usuario con rol y región, y es fuente principal para casi todas las demás tablas.</p>
+        </div>
+        <div class="card">
+          <strong>SesionTraduccion</strong>
+          <p>Registra cada sesión de traducción y su estado. Es el eje transaccional del sistema.</p>
+        </div>
+        <div class="card">
+          <strong>EntradaVoz / EntradaSenas</strong>
+          <p>Almacenan los datos multimedia de entrada asociados a sesiones de traducción.</p>
+        </div>
+        <div class="card">
+          <strong>LexicalUni</strong>
+          <p>Catalogo de unidades léxicas (palabras/frases) para traducción y favoritos.</p>
+        </div>
+        <div class="card">
+          <strong>TraduccionDetalle</strong>
+          <p>Relaciona sesiones con unidades léxicas, permitiendo reconstruir oraciones traducidas.</p>
+        </div>
+        <div class="card">
+          <strong>SignAvatarConfig / ConfiguracionDispositivo</strong>
+          <p>Guardan preferencias visuales del avatar y configuración técnica de dispositivos, ambos en relación 1:1 con Usuario.</p>
+        </div>
+        <div class="card">
+          <strong>Feedback / Soporte / LogAcceso</strong>
+          <p>Permiten medir satisfacción, registrar tickets y auditar accesos. Mantienen trazabilidad de la plataforma.</p>
+        </div>
+        <div class="card">
+          <strong>LogErrorSistema</strong>
+          <p>Tabla independiente para errores críticos del sistema. No depende de usuarios, lo que la hace más robusta para fallas tempranas.</p>
+        </div>
+      </div>
+    </section>
+    <section>
+      <h2>Relaciones clave</h2>
+      <div class="mermaid">
+      erDiagram
+        ROL {
+          CHAR(36) id_rol PK
+          VARCHAR(50) nombre_rol
+        }
+        REGION {
+          CHAR(36) id_region PK
+          VARCHAR(100) nombre_region
+          VARCHAR(100) departamento
+        }
+        USUARIO {
+          CHAR(36) id_usuario PK
+          CHAR(36) id_rol FK
+          CHAR(36) id_region FK
+          VARCHAR(150) correo
+        }
+        SESIONTRADUCCION {
+          CHAR(36) id_sesion PK
+          CHAR(36) id_usuario FK
+          ENUM estado
+          ENUM tipo_traduccion
+        }
+        ENTRADAVOZ {
+          CHAR(36) id_entrada_voz PK
+          CHAR(36) id_sesion FK
+          VARCHAR(255) url_audio
+        }
+        ENTRADASENAS {
+          CHAR(36) id_entrada_senas PK
+          CHAR(36) id_sesion FK
+          VARCHAR(255) url_video
+        }
+        LEXICALUNI {
+          CHAR(36) id_LexicalUni PK
+          VARCHAR(100) texto
+          VARCHAR(50) idioma
+        }
+        TRADUCCIONDETALLE {
+          CHAR(36) id_detalle PK
+          CHAR(36) id_sesion FK
+          CHAR(36) id_LexicalUni FK
+          INT orden
+        }
+        SIGNAVATARCONFIG {
+          CHAR(36) id_sing_avatar PK
+          CHAR(36) id_usuario FK
+          VARCHAR(50) estilo_avatar
+        }
+        CONFIGURACIONDISPOSITIVO {
+          CHAR(36) id_config PK
+          CHAR(36) id_usuario FK
+          BOOLEAN uso_offline
+        }
+        FEEDBACK {
+          CHAR(36) id_feedback PK
+          CHAR(36) id_usuario FK
+          CHAR(36) id_sesion FK
+          INT calificacion
+        }
+        SOPORTE {
+          CHAR(36) id_soporte PK
+          CHAR(36) id_usuario FK
+          VARCHAR(150) asunto
+        }
+        PALABRASFAVORITAS {
+          CHAR(36) id_favorito PK
+          CHAR(36) id_usuario FK
+          CHAR(36) id_LexicalUni FK
+        }
+        LOGACCESO {
+          CHAR(36) id_log PK
+          CHAR(36) id_usuario FK
+          TIMESTAMP fecha_hora
+        }
+        LOGERRORSISTEMA {
+          CHAR(36) id_error PK
+          VARCHAR(100) tipo_error
+        }
+        ROL ||--o{ USUARIO : "tiene"
+        REGION ||--o{ USUARIO : "tiene"
+        USUARIO ||--o{ SESIONTRADUCCION : "genera"
+        SESIONTRADUCCION ||--o{ ENTRADAVOZ : "contiene"
+        SESIONTRADUCCION ||--o{ ENTRADASENAS : "contiene"
+        SESIONTRADUCCION ||--o{ TRADUCCIONDETALLE : "incluye"
+        USUARIO ||--|| SIGNAVATARCONFIG : "configura"
+        USUARIO ||--|| CONFIGURACIONDISPOSITIVO : "configura"
+        USUARIO ||--o{ FEEDBACK : "publica"
+        SESIONTRADUCCION ||--o{ FEEDBACK : "recibe"
+        USUARIO ||--o{ SOPORTE : "abre"
+        USUARIO ||--o{ PALABRASFAVORITAS : "marca"
+        LEXICALUNI ||--o{ TRADUCCIONDETALLE : "usa"
+        LEXICALUNI ||--o{ PALABRASFAVORITAS : "usa"
+        USUARIO ||--o{ LOGACCESO : "genera"
+      </div>
+      <p class="small">Diagrama ER aproximado extraído del documento. Las tablas raíz sin dependencias entrantes son <strong>Rol</strong>, <strong>Region</strong>, <strong>LexicalUni</strong> y <strong>LogErrorSistema</strong>.</p>
+    </section>
+    <section>
+      <h2>Patrones importantes</h2>
+      <ul>
+        <li>Se usan UUID como identificadores únicos en todas las tablas principales.</li>
+        <li>La eliminación lógica se habilita mediante <strong>deleted_at</strong> en la mayoría de tablas.</li>
+        <li>Existen relaciones 1:1 para configuración de avatar y dispositivo.</li>
+        <li>Feedback y soporte usan <strong>SET NULL</strong> en FKs para preservar histórico si el usuario o la sesión desaparece.</li>
+        <li>LogErrorSistema queda independiente para garantizar registro de errores incluso antes de inicio de sesión.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Ejemplos de operaciones SQL</h2>
+      <div class="code-block">
+INSERT INTO Rol VALUES (UUID(), 'admin'), (UUID(), 'usuario'), (UUID(), 'invitado'), (UUID(), 'moderador'), (UUID(), 'soporte');
+
+INSERT INTO Usuario (id_usuario, id_rol, primer_nombre, primer_apellido, telefono, correo, password_hash)
+VALUES (UUID(), (SELECT id_rol FROM Rol LIMIT 1 OFFSET 0), 'Juan', 'Perez', '3001234567', 'juan@mail.com', 'hash1'),
+       (UUID(), (SELECT id_rol FROM Rol LIMIT 1 OFFSET 1), 'Maria', 'Lopez', '3007654321', 'maria@mail.com', 'hash2');
+
+INSERT INTO SesionTraduccion (id_sesion, id_usuario, estado, tipo_traduccion)
+VALUES (UUID(), (SELECT id_usuario FROM Usuario LIMIT 1 OFFSET 0), 'completado', 'voz_a_senas');
+      </div>
+      <p class="small">Estas inserciones ejemplifican la secuencia correcta: primero catálogos (Rol, Region, LexicalUni), luego Usuario, y finalmente entidades transaccionales.</p>
+    </section>
+    <section>
+      <h2>Recomendaciones para la presentación</h2>
+      <ul>
+        <li>Muestra primero el propósito: traducir entre señas y voz/texto.</li>
+        <li>Explica el flujo principal: Usuario → Sesión → EntradaVoz/EntradaSenas → TraducciónDetalle.</li>
+        <li>Destaca la personalización y auditoría: avatar, dispositivo, feedback, soporte y logs.</li>
+        <li>Usa el diagrama ER para que sea más visual y fácil de entender para el público.</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>
