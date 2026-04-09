@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignBridge — Base de Datos</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --accent: #00e5c0;
+    --accent2: #6c63ff;
+    --accent3: #ff6b6b;
+    --gold: #f5c842;
+    --text: #e8eaf6;
+    --text-dim: #8891a8;
+    --border: #1f2d45;
+    --pk: #f5c842;
+    --fk: #6c63ff;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(10,14,26,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    height: 56px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  nav::-webkit-scrollbar { display: none; }
+  nav .logo {
+    font-weight: 800;
+    font-size: 1rem;
+    color: var(--accent);
+    white-space: nowrap;
+    margin-right: 2rem;
+    letter-spacing: -0.5px;
+  }
+  nav a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0 0.9rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    transition: color 0.2s, border-bottom 0.2s;
+    border-bottom: 2px solid transparent;
+  }
+  nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 6rem 2rem 4rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,192,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,192,0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .hero-glow {
+    position: absolute;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(108,99,255,0.15) 0%, transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(0,229,192,0.08);
+    border: 1px solid rgba(0,229,192,0.3);
+    border-radius: 999px;
+    padding: 0.35rem 1rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    position: relative;
+    animation: fadeUp 0.6s ease both;
+  }
+  .hero h1 {
+    font-size: clamp(3rem, 8vw, 7rem);
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin-bottom: 1rem;
+    position: relative;
+    animation: fadeUp 0.7s 0.1s ease both;
+  }
+  .hero h1 span { color: var(--accent); }
+  .hero-sub {
+    font-size: clamp(1rem, 2vw, 1.3rem);
+    color: var(--text-dim);
+    max-width: 580px;
+    margin-bottom: 2.5rem;
+    font-weight: 400;
+    animation: fadeUp 0.7s 0.2s ease both;
+  }
+  .hero-stats {
+    display: flex;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    animation: fadeUp 0.7s 0.3s ease both;
+    position: relative;
+  }
+  .stat { text-align: center; }
+  .stat-num { font-size: 2.2rem; font-weight: 800; color: var(--accent); font-family: var(--mono); line-height: 1; }
+  .stat-lbl { font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.25rem; }
+
+  /* ── SECTION ── */
+  section {
+    padding: 6rem 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .section-tag {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+    font-family: var(--mono);
+  }
+  .section-title {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.75rem;
+  }
+  .section-desc {
+    color: var(--text-dim);
+    font-size: 1rem;
+    max-width: 620px;
+    margin-bottom: 3rem;
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0;
+  }
+
+  /* ── TABLE CARDS ── */
+  .tables-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.5rem;
+  }
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.25s, transform 0.25s;
+  }
+  .table-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+  .table-card-header {
+    padding: 1.1rem 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .table-card-header h3 {
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .table-card-header .engine-badge {
+    font-size: 0.6rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-family: var(--mono);
+    background: rgba(0,229,192,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(0,229,192,0.25);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .table-importance {
+    padding: 0.8rem 1.4rem;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    font-style: italic;
+    line-height: 1.5;
+  }
+  .table-fields {
+    padding: 0.6rem 0;
+  }
+  .field-row {
+    display: grid;
+    grid-template-columns: 1.6fr 1.2fr auto;
+    gap: 0.5rem;
+    padding: 0.42rem 1.4rem;
+    font-size: 0.77rem;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    transition: background 0.15s;
+  }
+  .field-row:hover { background: rgba(255,255,255,0.03); }
+  .field-row:last-child { border-bottom: none; }
+  .field-name {
+    font-family: var(--mono);
+    color: var(--text);
+    font-size: 0.76rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .field-type {
+    font-family: var(--mono);
+    color: var(--text-dim);
+    font-size: 0.7rem;
+  }
+  .key-badge {
+    font-size: 0.58rem;
+    padding: 0.12rem 0.42rem;
+    border-radius: 3px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    font-family: var(--mono);
+  }
+  .pk { background: rgba(245,200,66,0.15); color: var(--pk); border: 1px solid rgba(245,200,66,0.3); }
+  .fk { background: rgba(108,99,255,0.15); color: var(--fk); border: 1px solid rgba(108,99,255,0.3); }
+
+  /* ── ERD LEGEND ── */
+  .legend {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+    padding: 1rem 1.4rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.78rem;
+  }
+  .legend-item { display: flex; align-items: center; gap: 0.5rem; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+  /* ── SQL BLOCKS ── */
+  .sql-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+  .sql-header {
+    padding: 0.75rem 1.4rem;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sql-header h4 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .sql-label {
+    font-size: 0.65rem;
+    font-family: var(--mono);
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .lbl-insert { background: rgba(0,229,192,0.12); color: var(--accent); border: 1px solid rgba(0,229,192,0.3); }
+  .lbl-update { background: rgba(245,200,66,0.12); color: var(--gold); border: 1px solid rgba(245,200,66,0.3); }
+  .lbl-delete { background: rgba(255,107,107,0.12); color: var(--accent3); border: 1px solid rgba(255,107,107,0.3); }
+  .lbl-select { background: rgba(108,99,255,0.12); color: var(--accent2); border: 1px solid rgba(108,99,255,0.3); }
+  .lbl-merge  { background: rgba(255,160,60,0.12); color: #ffab40; border: 1px solid rgba(255,160,60,0.3); }
+
+  .sql-reason {
+    padding: 0.75rem 1.4rem;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    border-top: 1px solid var(--border);
+    line-height: 1.55;
+  }
+  .sql-reason strong { color: var(--accent); font-weight: 700; }
+
+  pre {
+    padding: 1.2rem 1.4rem;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    line-height: 1.7;
+    overflow-x: auto;
+    color: #c9d1e0;
+  }
+  .kw { color: #ff79c6; font-weight: 700; }
+  .fn { color: #50fa7b; }
+  .str { color: #f1fa8c; }
+  .cm { color: #6272a4; font-style: italic; }
+  .op-like { color: #ffb86c; font-weight: 700; }
+  .op-between { color: #ff79c6; font-weight: 700; }
+  .op-in { color: #8be9fd; font-weight: 700; }
+  .op-null { color: #ff5555; font-weight: 700; }
+  .tbl { color: var(--accent); }
+  .col { color: #cdd6f4; }
+  .num { color: #bd93f9; }
+
+  /* ── QUERY CARDS ── */
+  .query-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    transition: border-color 0.2s;
+  }
+  .query-card:hover { border-color: var(--accent2); }
+  .query-header {
+    padding: 0.8rem 1.4rem;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .query-num {
+    width: 28px; height: 28px;
+    background: var(--accent2);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .query-header h4 { font-size: 0.88rem; font-weight: 700; color: var(--text); }
+  .op-badge {
+    margin-left: auto;
+    font-size: 0.62rem;
+    font-family: var(--mono);
+    padding: 0.15rem 0.55rem;
+    border-radius: 4px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    background: rgba(108,99,255,0.15);
+    color: var(--accent2);
+    border: 1px solid rgba(108,99,255,0.3);
+  }
+
+  /* ── DELETE SECTION ── */
+  .delete-order {
+    background: var(--surface);
+    border: 1px solid rgba(255,107,107,0.25);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .delete-order h4 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--accent3);
+    margin-bottom: 1rem;
+    font-family: var(--mono);
+  }
+  .delete-flow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .delete-node {
+    background: rgba(255,107,107,0.1);
+    border: 1px solid rgba(255,107,107,0.25);
+    border-radius: 6px;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.72rem;
+    font-family: var(--mono);
+    color: #ffaaa5;
+  }
+  .arrow-right { color: var(--text-dim); font-size: 0.85rem; }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.78rem;
+    font-family: var(--mono);
+  }
+  footer span { color: var(--accent); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── SCROLL REVEAL ── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.55s ease, transform 0.55s ease;
+  }
+  .reveal.visible { opacity: 1; transform: none; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    .tables-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 2.8rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="logo">⬡ SignBridge DB</div>
+  <a href="#tablas">Tablas</a>
+  <a href="#insercion">Inserción</a>
+  <a href="#actualizacion">Actualización</a>
+  <a href="#borrado">Borrado</a>
+  <a href="#merge">Merge</a>
+  <a href="#consultas">Consultas</a>
+</nav>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-badge">📦 MySQL 8+ · InnoDB</div>
+  <h1>Sign<span>Bridge</span><br>Base de Datos</h1>
+  <p class="hero-sub">Aplicación de Traducción entre Lenguaje de Señas Colombiano y Texto/Voz — Documentación técnica completa de la base de datos.</p>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-num">15</div><div class="stat-lbl">Tablas</div></div>
+    <div class="stat"><div class="stat-num">UUID</div><div class="stat-lbl">PK Global</div></div>
+    <div class="stat"><div class="stat-num">10</div><div class="stat-lbl">Consultas SELECT</div></div>
+    <div class="stat"><div class="stat-num">LSC</div><div class="stat-lbl">Lenguaje Señas Col.</div></div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ══════════════════════════════════
+     SECCIÓN 1 — TABLAS
+══════════════════════════════════ -->
+<section id="tablas">
+  <div class="section-tag">01 — Estructura</div>
+  <h2 class="section-title">Tablas de la Base de Datos</h2>
+  <p class="section-desc">Cada tabla fue diseñada siguiendo normalización y separación de responsabilidades. Las llaves primarias usan UUIDs para garantizar unicidad global.</p>
+
+  <div class="legend reveal">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--pk)"></div><span style="color:var(--pk); font-family:var(--mono); font-size:0.78rem; font-weight:700;">PK</span> — Llave Primaria</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--fk)"></div><span style="color:var(--fk); font-family:var(--mono); font-size:0.78rem; font-weight:700;">FK</span> — Llave Foránea</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--text-dim)"></div>Campos opcionales (NULL)</div>
+  </div>
+
+  <div class="tables-grid">
+
+    <!-- Rol -->
+    <div class="table-card reveal">
+      <div class="table-card-header"><h3>Rol</h3><span class="engine-badge">InnoDB</span></div>
+      <div class="table-importance">Catálogo central de roles del sistema. Define los niveles de acceso y permisos disponibles (admin, usuario, invitado, moderador, soporte). Facilita la gestión de permisos sin modificar la lógica de los usuarios.</div>
+      <div class="table-fields">
+        <div class="field-row"><span class="field-name">id_rol</span><span class="field-type">CHAR(36)</span><span class="key-badge pk">PK</span></div>
+        <div class="field-row"><span class="field-name">nombre_rol</span><span class="field-type">VARCHAR(50)</span><span></span></div>
+      </div>
+    </div>
+
+    <!-- Region -->
+    <div class="table-card reveal">
+      <div class="table-card-header"><h3>Region</h3><span class="engine-badge">InnoDB</span></div>
+      <div class="table-importance">Catálogo de regiones geográficas de Colombia. Permite asociar usuarios a su ciudad y departamento para análisis geográficos y personalización regional del servicio LSC.</div>
+      <div class="table-fields">
+        <div class="field-row"><span class="field-name">id_region</span><span class="field-type">CHAR(36)</span><span class="key-badge pk">PK</span></div>
+        <div class="field-row"><span class="field-name">nombre_region</span><span class="field-type">VARCHAR(100)</span><span></span></div>
+        <div class="field-row"><span class="field-name">departamento</span><span class="field-type">VARCHAR(100)</span><span></span></div>
+        <div class="field-row"><span class="field-name">created_at</span><span class="field-type">DATETIME</span><span></span></div>
+        <div class="field-row"><span class="field-name">updated_at</span><span class="field-type">DATETIME</span><span></span></div>
+        <div class="field-row"><span class="field-name">deleted_at</span><span class="field-type">DATETIME NULL</span><span></span></div>
+      </div>
+    </div>
+
+    <!-- Usuario -->
+    <div class="table-card reveal">
+      <div class="table-card-header"><h3>Usuario</h3><span class="engine-badge">InnoDB</span></div>
+      <div class="table-importance">Núcleo de la plataforma. Almacena todos los usuarios registrados, los asocia a un rol y una región, garantiza unicidad del correo y almacena contraseñas como hash. De esta tabla dependen casi todas las demás entidades.</div>
+      <div class="table-fields">
+        <div class="field-row"><span class="field-name">id_usuario</span><span class="field-type">CHAR(36)</span><span class="key-badge pk">PK</span></div>
+        <div class="field-row"><span class="field-name">id_rol</span><span class="field-type">CHAR(36)</span><span class="key-badge fk">FK</span></div>
+        <div class="field-row"><span class="field-name">id_region</span><span class="field-type">CHAR(36)</span><span class="key-badge fk">FK</span></div>
+        <div class="field-row"><span class="field-name">primer_nombre</span><span class="field-type">VARCHAR(50)</span><span></span></div>
+        <div class="field-row"><span class="field-name">primer_apellido</span><span class="field-type">VARCHAR(50)</span><span></span></div>
+        <div class="field-row"><span class="field-name">telefono</span><span class="field-type">VARCHAR(20)</span><span></span></div>
+        <div class="field-row"><span class="field-name">correo</span><span class="field-type">VARCHAR(150) UNIQUE</span><span></span></div>
+        <div class="field-row"><span class="field-name">password_hash</span><span class="field-type">VARCHAR(255)</span><span></span></div>
+        <div class="field-row"><span class="field-name">deleted_at</span><span class="field-type">DATETIME NULL</span><span></span></div>
+      </div>
+    </div>
+
+    <!-- SesionTraduccion -->
+    <div class="table-card reveal">
+      <div class="table-card-header"><h3>SesionTraduccion</h3><span class="engine-badge">InnoDB</span></div>
+      <div class="table-importance">Eje transaccional del sistema. Registra cada sesión de traducción, gestiona el ciclo de vida (pendiente → procesando → completado/error) y determina la dirección (voz a señas o señas a texto).</div>
+      <div class="table-fields">
+        <div class="field-row"><span class="field-name">id_sesion</span><span class="field-type">CHAR(36)</span><span class="key-badge pk">PK</span></div>
+        <div class="field-row"><span class="field-name">id_usuario</span><span class="field-type">CHAR(36)</span><span class="key-badge fk">FK</span></div>
+        <div class="field-row"><span class="field-name">fecha_hora</span><span class="field-type">TIMESTAMP</span><span></span></div>
+        <div class="field-row"><span class="field-name">estado</span><span class="field-type">ENUM(4 estados)</span><span></span></div>
+        <div class="field-row"><span class="field-name">tipo_traduccion</span><span class="field-type">ENUM(2 tipos)</span><span></span></div>
+        <div class="field-row"><span class="field-name">deleted_at</span><span class="field-type">DATETIME NULL</span><span></span></div>
+      </div>
+    </div>
+
+    <!-- EntradaVoz -->
+    <div class="table-card reveal">
+      <div class="table-card-header"><h3>EntradaVoz</h3><span class="engine-badge">InnoDB</span></div>
+      <div class="table-importance">Almacena el audio capturado y la transcripción generada por el motor STT (Speech-to-Text). Fundamental para el proceso de traducción voz → señas y auditoría de calidad.</div>
+      <div class="table-fields">
+        <div class="field-row"><span class="field-name">id_entrada_voz</span><span class="field-type">CHAR(36)</span><span class="key-badge pk">PK</span></div>
+        <div class="field-row"><span class="field-name">id_sesion</span><span class="field-type">CHAR(36)</span><span class="key-badge fk">FK</span></div>
+        <div class="field-row"><span class="field-name">url_audio</span><span class="field-type">VARCHAR(255) NULL</span><span></span></div>
+        <div class="field-row"><span class="field-name">texto_generado</span><span class="field-type">TEXT NULL</span><span></span></div>
+        <div class="field-row"><span class="field-name">deleted_at</span><span class="field-type">DATETIME NULL</span><span></span></div>
+      </div>
+    </div>
+
+    <!-- EntradaSenas -->
+    <div class="table-card reveal">
+      <div class="table-card-header"><h3>EntradaSenas</h3><span class="engine-badge">InnoDB</span></div>
+      <div class="table-importance">Guarda el video de señas capturado y el texto reconocido por el modelo de IA. Permite auditoría, reentrenamiento del modelo y mejora continua de la precisión de traducción señas → texto.</div>
+      <div class="table-fields">
+        <div class="field-row"><span class="field-name">id_entrada_senas</span><span class="field-type">CHAR(36)</span><span class="key-badge pk">PK</span></div>
+        <div class="field-row"><span class="field-name">id_sesion</span><span class="field-type">CHAR(36)</span><span class="key-badge fk">FK</span></div>
+        <div class="field-row"><span class="field-name">url_video</span><span class="field-type">VARCHAR(255) NULL</span><span></span></div>
+        <div class="field-row"><span class="field-name">texto_generado</span><span class="field-type">TEXT NULL</span><span></span></div>
+        <div class="field-row"><span class="field-name">deleted_at</span><span class="field-type">DATETIME NULL</span><span></span></div>
+      </div>
+    </div>
+
+    <!-- LexicalUni -->
+    <div class="table-card reveal">
+      <div class="table-card-header"><h3>LexicalUni</h3><span class="engine-badge">InnoDB</span></div>
+      <div class="table-importance">Vocabulario centralizado del sistema. Almacena palabras y frases en distintos idiomas, sirviendo de referencia para traducciones y favoritos. Permite escalar el sistema a múltiples idiomas o variantes regionales.</div>
+      <div class="table-fields">
+        <div class="field-row"><span class="field-name">id_LexicalUni</span><span class="field-type">CHAR(36)</span><span class="key-badge pk">PK</span></div>
+        <div class="field-row"><span class="field-name">texto</span><span class="field-type">VARCHAR(100) NULL</span><span></span></div>
+        <div class="field-row"><span class="field-name">idioma</span><span class="field-type">VARCHAR(50)</span><span></span></div>
+        <div class="field-row"><span class="field-name">deleted_at</span><span class="field-type">DATETIME NULL</span><span></span></div>
+      </div>
+    </div>
+
+    <!-- TraduccionDetalle -->
+    <div class="table-card reveal">
+      <div class="table-card-header"><h3>TraduccionDetalle</h3><span class="engine-badge">InnoDB</span></div>
+      <div class="table-importance">Tabla asociativa que desglosa una sesión en unidades léxicas individuales con su posición. Permite reconstruir la oración traducida y analizar el vocabulario más frecuente en las traducciones.</div>
+      <div class="table-fields">
+        <div class="field-row"><span class="field-name">id_detalle</span><span class="field-type">CHAR(36)</span><span class="key-badge pk">PK</span></div>
+        <div class="field-row"><span class="field-name">id_sesion</span><span class="field-type">CHAR(36)</span><span class="key-badge fk">FK</span></div>
+        <div class="field-row"><span class="field-name">id_LexicalUni</span><span class="field-type">CHAR(36)</span><span class="key-badge fk">FK</span></div>
+        <div class="field-row"><span class="field-name">orden</span><span class="field-type">INT NOT NULL</span><span></span></div>
+        <div class="field-row"><span class="field-name">deleted_at</span><span class="field-type">DATETIME NULL</span><span></span></div>
+      </div>
+    </div>
+
+    <!-- SignAvatarConfig -->
+    <div class="table-card reveal">
+      <div class="table-card-header"><h3>SignAvatarConfig</h3><span class="engine-badge">InnoDB</span></div>
+      <div class="table-importance">Gestiona la personalización del avatar 3D de señas de cada usuario. Relación 1:1 con Usuario garantiza configuración visual única por persona, mejorando accesibilidad y experiencia.</div>
+      <div class="table-fields">
+        <div class="field-row"><span class="field-name">id_sing_avatar</span><span class="field-type">CHAR(36)</span><span class="key-badge pk">PK</span></div>
+        <div class="field-row"><span class="field-name">id_usuario</span><span class="field-type">CHAR(36) UNIQUE</span><span class="key-badge fk">FK</span></div>
+        <div class="field-row"><span class="field-name">estilo_avatar</span><span class="field-type">VARCHAR(50) NULL</span><span></span></div>
+        <div class="field-row"><span class="field-name">color_piel</span><span class="field-type">VARCHAR(50) NULL</span><span></span></div>
+        <div class="field-row"><span class="field-name">color_ropa</span><span class="field-type">VARCHAR(50) NULL</span><span></span></div>
+        <div class="field-row"><span class="field-name">tamano_avatar</span><span class="field-type">ENUM(3 tamaños)</span><span></span></div>
+        <div class="field-row"><span class="field-name">ritmo_lsc</span><span class="field-type">INT DEFAULT 1</span><span></span></div>
+        <div class="field-row"><span class="field-name">deleted_at</span><span class="field-type">DATETIME NULL</span><span></span></div>
+      </div>
+    </div>
+
+    <!-- ConfiguracionDispositivo -->
+    <div class="table-card reveal">
+      <div class="table-card-header"><h3>ConfiguracionDispositivo</h3><span class="engine-badge">InnoDB</span></div>
+      <div class="table-importance">Almacena la configuración técnica del dispositivo Android del usuario (modo offline, versión, tamaño de pantalla). Permite adaptar la funcionalidad a las capacidades del dispositivo, optimizando entornos sin conectividad.</div>
+      <div class="table-fields">
+        <div class="field-row"><span class="field-name">id_config</span><span class="field-type">CHAR(36)</span><span class="key-badge pk">PK</span></div>
+        <div class="field-row"><span class="field-name">id_usuario</span><span class="field-type">CHAR(36) UNIQUE</span><span class="key-badge fk">FK</span></div>
+        <div class="field-row"><span class="field-name">uso_offline</span><span class="field-type">BOOLEAN NULL</span><span></span></div>
+        <div class="field-row"><span class="field-name">version_android</span><span class="field-type">VARCHAR(20) NULL</span><span></span></div>
+        <div class="field-row"><span class="field-name">tamano_pantalla</span><span class="field-type">VARCHAR(20) NULL</span><span></span></div>
+        <div class="field-row"><span class="field-name">deleted_at</span><span class="field-type">DATETIME NULL</span><span></span></div>
+      </div>
+    </div>
+
+    <!-- Feedback -->
+    <div class="table-card reveal">
+      <div class="table-card-header"><h3>Feedback</h3><span class="engine-badge">InnoDB</span></div>
+      <div class="table-importance">Recopila valoraciones (1–5) y comentarios sobre sesiones de traducción. Usa ON DELETE SET NULL para preservar el histórico aunque el usuario o sesión sean eliminados, garantizando datos estadísticos continuos.</div>
+      <div class="table-fields">
+        <div class="field-row"><span class="field-name">id_feedback</span><span class="field-type">CHAR(36)</span><span class="key-badge pk">PK</span></div>
+        <div class="field-row"><span class="field-name">id_usuario</span><span class="field-type">CHAR(36)</span><span class="key-badge fk">FK</span></div>
+        <div class="field-row"><span class="field-name">id_sesion</span><span class="field-type">CHAR(36)</span><span class="key-badge fk">FK</span></div>
+        <div class="field-row"><span class="field-name">calificacion</span><span class="field-type">INT CHECK(1–5)</span><span></span></div>
+        <div class="field-row"><span class="field-name">comentario</span><span class="field-type">TEXT NULL</span><span></span></div>
+        <div class="field-row"><span class="field-name">fecha</span><span class="field-type">TIMESTAMP</span><span></span></div>
+        <div class="field-row"><span class="field-name">deleted_at</span><span class="field-type">DATETIME NULL</span><span></span></div>
+      </div>
+    </div>
+
+    <!-- Soporte -->
+    <div class="table-card reveal">
+      <div class="table-card-header"><h3>Soporte</h3><span class="engine-badge">InnoDB</span></div>
+      <div class="table-importance">Sistema de tickets de soporte técnico. Gestiona el ciclo de vida de incidencias (pendiente → en_proceso → resuelto) reportadas por usuarios, permitiendo priorizar y hacer seguimiento a problemas técnicos.</div>
+      <div class="table-fields">
+        <div class="field-row"><span class="field-name">id_soporte</span><span class="field-type">CHAR(36)</span><span class="key-badge pk">PK</span></div>
+        <div class="field-row"><span class="field-name">id_usuario</span><span class="field-type">CHAR(36)</span><span class="key-badge fk">FK</span></div>
+        <div class="field-row"><span class="field-name">asunto</span><span class="field-type">VARCHAR(150) NULL</span><span></span></div>
+        <div class="field-row"><span class="field-name">mensaje</span><span class="field-type">TEXT NULL</span><span></span></div>
+        <div class="field-row"><span class="field-name">estado</span><span class="field-type">ENUM(3 estados)</span><span></span></div>
+        <div class="field-row"><span class="field-name">fecha</span><span class="field-type">TIMESTAMP</span><span></span></div>
+        <div class="field-row"><span class="field-name">deleted_at</span><span class="field-type">DATETIME NULL</span><span></span></div>
+      </div>
+    </div>
+
+    <!-- PalabrasFavoritas -->
+    <div class="table-card reveal">
+      <div class="table-card-header"><h3>PalabrasFavoritas</h3><span class="engine-badge">InnoDB</span></div>
+      <div class="table-importance">Registra las unidades léxicas marcadas como favoritas por cada usuario y cuántas veces las ha utilizado. Alimenta modelos de predicción de palabras y personaliza sugerencias de vocabulario.</div>
+      <div class="table-fields">
+        <div class="field-row"><span class="field-name">id_favorito</span><span class="field-type">CHAR(36)</span><span class="key-badge pk">PK</span></div>
+        <div class="field-row"><span class="field-name">id_usuario</span><span class="field-type">CHAR(36)</span><span class="key-badge fk">FK</span></div>
+        <div class="field-row"><span class="field-name">id_LexicalUni</span><span class="field-type">CHAR(36)</span><span class="key-badge fk">FK</span></div>
+        <div class="field-row"><span class="field-name">veces_usado</span><span class="field-type">INT DEFAULT 0</span><span></span></div>
+        <div class="field-row"><span class="field-name">deleted_at</span><span class="field-type">DATETIME NULL</span><span></span></div>
+      </div>
+    </div>
+
+    <!-- LogAcceso -->
+    <div class="table-card reveal">
+      <div class="table-card-header"><h3>LogAcceso</h3><span class="engine-badge">InnoDB</span></div>
+      <div class="table-importance">Tabla de auditoría de seguridad. Registra cada evento de acceso (login, logout, intento fallido). Detecta accesos no autorizados, patrones sospechosos y garantiza trazabilidad completa de sesiones.</div>
+      <div class="table-fields">
+        <div class="field-row"><span class="field-name">id_log</span><span class="field-type">CHAR(36)</span><span class="key-badge pk">PK</span></div>
+        <div class="field-row"><span class="field-name">id_usuario</span><span class="field-type">CHAR(36)</span><span class="key-badge fk">FK</span></div>
+        <div class="field-row"><span class="field-name">fecha_hora</span><span class="field-type">TIMESTAMP</span><span></span></div>
+        <div class="field-row"><span class="field-name">tipo_acceso</span><span class="field-type">ENUM(3 tipos)</span><span></span></div>
+        <div class="field-row"><span class="field-name">deleted_at</span><span class="field-type">DATETIME NULL</span><span></span></div>
+      </div>
+    </div>
+
+    <!-- LogErrorSistema -->
+    <div class="table-card reveal">
+      <div class="table-card-header"><h3>LogErrorSistema</h3><span class="engine-badge">InnoDB</span></div>
+      <div class="table-importance">Registro centralizado de errores del sistema (DB, API, UI, Auth). No tiene FK hacia usuarios, garantizando que los errores se registren siempre, incluso antes de la autenticación. Fundamental para monitoreo y DevOps.</div>
+      <div class="table-fields">
+        <div class="field-row"><span class="field-name">id_error</span><span class="field-type">CHAR(36)</span><span class="key-badge pk">PK</span></div>
+        <div class="field-row"><span class="field-name">tipo_error</span><span class="field-type">VARCHAR(100) NULL</span><span></span></div>
+        <div class="field-row"><span class="field-name">modulo</span><span class="field-type">VARCHAR(100) NULL</span><span></span></div>
+        <div class="field-row"><span class="field-name">mensaje</span><span class="field-type">TEXT NULL</span><span></span></div>
+        <div class="field-row"><span class="field-name">fecha</span><span class="field-type">TIMESTAMP</span><span></span></div>
+        <div class="field-row"><span class="field-name">deleted_at</span><span class="field-type">DATETIME NULL</span><span></span></div>
+      </div>
+    </div>
+
+  </div><!-- /tables-grid -->
+</section>
+
+<hr class="divider">
+
+<!-- ══════════════════════════════════
+     SECCIÓN 2 — INSERCIÓN
+══════════════════════════════════ -->
+<section id="insercion">
+  <div class="section-tag">02 — DML</div>
+  <h2 class="section-title">Procedimientos de Inserción</h2>
+  <p class="section-desc">La inserción sigue el orden de dependencias: primero las tablas padre (Rol, Region, LexicalUni) y luego las tablas hijo. Se usan UUIDs generados automáticamente para garantizar unicidad global.</p>
+
+  <!-- 2.1 Roles -->
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>2.1 Inserción de Roles</h4><span class="sql-label lbl-insert">INSERT</span></div>
+    <pre><span class="kw">INSERT INTO</span> <span class="tbl">Rol</span> <span class="kw">VALUES</span>
+  (<span class="fn">UUID</span>(), <span class="str">'admin'</span>),
+  (<span class="fn">UUID</span>(), <span class="str">'usuario'</span>),
+  (<span class="fn">UUID</span>(), <span class="str">'invitado'</span>),
+  (<span class="fn">UUID</span>(), <span class="str">'moderador'</span>),
+  (<span class="fn">UUID</span>(), <span class="str">'soporte'</span>);</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Define los cinco tipos de acceso del sistema. Deben insertarse primero porque la tabla <code>Usuario</code> depende de esta tabla mediante FK. Sin estos registros, ningún usuario podría ser creado correctamente.</div>
+  </div>
+
+  <!-- 2.2 Usuarios -->
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>2.2 Inserción de Usuarios</h4><span class="sql-label lbl-insert">INSERT</span></div>
+    <pre><span class="kw">INSERT INTO</span> <span class="tbl">Usuario</span> (id_usuario, id_rol, primer_nombre, primer_apellido, telefono, correo, password_hash)
+<span class="kw">VALUES</span>
+  (<span class="fn">UUID</span>(), (<span class="kw">SELECT</span> id_rol <span class="kw">FROM</span> <span class="tbl">Rol</span> <span class="kw">LIMIT</span> <span class="num">1</span> <span class="kw">OFFSET</span> <span class="num">0</span>), <span class="str">'Juan'</span>,   <span class="str">'Perez'</span>, <span class="str">'3001234567'</span>, <span class="str">'juan@mail.com'</span>,   <span class="str">'hash1'</span>),
+  (<span class="fn">UUID</span>(), (<span class="kw">SELECT</span> id_rol <span class="kw">FROM</span> <span class="tbl">Rol</span> <span class="kw">LIMIT</span> <span class="num">1</span> <span class="kw">OFFSET</span> <span class="num">1</span>), <span class="str">'Maria'</span>,  <span class="str">'Lopez'</span>, <span class="str">'3007654321'</span>, <span class="str">'maria@mail.com'</span>,  <span class="str">'hash2'</span>),
+  (<span class="fn">UUID</span>(), (<span class="kw">SELECT</span> id_rol <span class="kw">FROM</span> <span class="tbl">Rol</span> <span class="kw">LIMIT</span> <span class="num">1</span> <span class="kw">OFFSET</span> <span class="num">2</span>), <span class="str">'Carlos'</span>, <span class="str">'Ruiz'</span>,  <span class="str">'3101112233'</span>, <span class="str">'carlos@mail.com'</span>, <span class="str">'hash3'</span>),
+  (<span class="fn">UUID</span>(), (<span class="kw">SELECT</span> id_rol <span class="kw">FROM</span> <span class="tbl">Rol</span> <span class="kw">LIMIT</span> <span class="num">1</span> <span class="kw">OFFSET</span> <span class="num">3</span>), <span class="str">'Ana'</span>,    <span class="str">'Torres'</span>,<span class="str">'3204445566'</span>, <span class="str">'ana@mail.com'</span>,    <span class="str">'hash4'</span>),
+  (<span class="fn">UUID</span>(), (<span class="kw">SELECT</span> id_rol <span class="kw">FROM</span> <span class="tbl">Rol</span> <span class="kw">LIMIT</span> <span class="num">1</span> <span class="kw">OFFSET</span> <span class="num">4</span>), <span class="str">'Luis'</span>,   <span class="str">'Gomez'</span>, <span class="str">'3159998877'</span>, <span class="str">'luis@mail.com'</span>,   <span class="str">'hash5'</span>);</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Se crean cinco usuarios de prueba con rol distinto cada uno. El subquery con <code>LIMIT/OFFSET</code> asigna roles variados sin conocer los UUIDs previamente. El campo <code>deleted_at</code> habilita eliminación lógica (soft delete).</div>
+  </div>
+
+  <!-- 2.3 Regiones -->
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>2.3 Inserción de Regiones</h4><span class="sql-label lbl-insert">INSERT</span></div>
+    <pre><span class="kw">INSERT INTO</span> <span class="tbl">Region</span> (id_region, nombre_region, departamento)
+<span class="kw">VALUES</span>
+  (<span class="fn">UUID</span>(), <span class="str">'Bogotá D.C.'</span>,   <span class="str">'Cundinamarca'</span>),
+  (<span class="fn">UUID</span>(), <span class="str">'Medellín'</span>,      <span class="str">'Antioquia'</span>),
+  (<span class="fn">UUID</span>(), <span class="str">'Cali'</span>,          <span class="str">'Valle del Cauca'</span>),
+  (<span class="fn">UUID</span>(), <span class="str">'Barranquilla'</span>, <span class="str">'Atlántico'</span>),
+  (<span class="fn">UUID</span>(), <span class="str">'Bucaramanga'</span>,  <span class="str">'Santander'</span>);</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Carga las principales ciudades de Colombia para asociarlas a usuarios. Permite segmentar estadísticas por región geográfica y adaptar el servicio a variantes regionales del LSC.</div>
+  </div>
+
+  <!-- 2.4 Sesiones -->
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>2.4 Inserción de Sesiones de Traducción</h4><span class="sql-label lbl-insert">INSERT</span></div>
+    <pre><span class="kw">INSERT INTO</span> <span class="tbl">SesionTraduccion</span> (id_sesion, id_usuario, estado, tipo_traduccion)
+<span class="kw">VALUES</span>
+  (<span class="fn">UUID</span>(), (<span class="kw">SELECT</span> id_usuario <span class="kw">FROM</span> <span class="tbl">Usuario</span> <span class="kw">LIMIT</span> <span class="num">1</span> <span class="kw">OFFSET</span> <span class="num">0</span>), <span class="str">'completado'</span>, <span class="str">'voz_a_senas'</span>),
+  (<span class="fn">UUID</span>(), (<span class="kw">SELECT</span> id_usuario <span class="kw">FROM</span> <span class="tbl">Usuario</span> <span class="kw">LIMIT</span> <span class="num">1</span> <span class="kw">OFFSET</span> <span class="num">1</span>), <span class="str">'procesando'</span>, <span class="str">'senas_a_texto'</span>),
+  (<span class="fn">UUID</span>(), (<span class="kw">SELECT</span> id_usuario <span class="kw">FROM</span> <span class="tbl">Usuario</span> <span class="kw">LIMIT</span> <span class="num">1</span> <span class="kw">OFFSET</span> <span class="num">2</span>), <span class="str">'pendiente'</span>,  <span class="str">'voz_a_senas'</span>),
+  (<span class="fn">UUID</span>(), (<span class="kw">SELECT</span> id_usuario <span class="kw">FROM</span> <span class="tbl">Usuario</span> <span class="kw">LIMIT</span> <span class="num">1</span> <span class="kw">OFFSET</span> <span class="num">3</span>), <span class="str">'error'</span>,      <span class="str">'senas_a_texto'</span>),
+  (<span class="fn">UUID</span>(), (<span class="kw">SELECT</span> id_usuario <span class="kw">FROM</span> <span class="tbl">Usuario</span> <span class="kw">LIMIT</span> <span class="num">1</span> <span class="kw">OFFSET</span> <span class="num">4</span>), <span class="str">'completado'</span>, <span class="str">'voz_a_senas'</span>);</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Se registran sesiones en todos los estados posibles del ciclo de vida y se cubren ambos tipos de traducción. Permite probar todas las transiciones de estado del ENUM y simular el flujo real del motor de traducción.</div>
+  </div>
+
+  <!-- 2.5 EntradaVoz y EntradaSenas -->
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>2.5 Inserción de Entradas de Voz y Señas</h4><span class="sql-label lbl-insert">INSERT</span></div>
+    <pre><span class="kw">INSERT INTO</span> <span class="tbl">EntradaVoz</span> (id_entrada_voz, id_sesion, url_audio, texto_generado)
+<span class="kw">VALUES</span>
+  (<span class="fn">UUID</span>(), (<span class="kw">SELECT</span> id_sesion <span class="kw">FROM</span> <span class="tbl">SesionTraduccion</span> <span class="kw">LIMIT</span> <span class="num">1</span> <span class="kw">OFFSET</span> <span class="num">0</span>), <span class="str">'audio1.mp3'</span>, <span class="str">'hola como estas'</span>),
+  (<span class="fn">UUID</span>(), (<span class="kw">SELECT</span> id_sesion <span class="kw">FROM</span> <span class="tbl">SesionTraduccion</span> <span class="kw">LIMIT</span> <span class="num">1</span> <span class="kw">OFFSET</span> <span class="num">1</span>), <span class="str">'audio2.mp3'</span>, <span class="str">'buenos dias'</span>),
+  (<span class="fn">UUID</span>(), (<span class="kw">SELECT</span> id_sesion <span class="kw">FROM</span> <span class="tbl">SesionTraduccion</span> <span class="kw">LIMIT</span> <span class="num">1</span> <span class="kw">OFFSET</span> <span class="num">2</span>), <span class="str">'audio3.mp3'</span>, <span class="str">'gracias'</span>),
+  (<span class="fn">UUID</span>(), (<span class="kw">SELECT</span> id_sesion <span class="kw">FROM</span> <span class="tbl">SesionTraduccion</span> <span class="kw">LIMIT</span> <span class="num">1</span> <span class="kw">OFFSET</span> <span class="num">3</span>), <span class="str">'audio4.mp3'</span>, <span class="str">'por favor'</span>),
+  (<span class="fn">UUID</span>(), (<span class="kw">SELECT</span> id_sesion <span class="kw">FROM</span> <span class="tbl">SesionTraduccion</span> <span class="kw">LIMIT</span> <span class="num">1</span> <span class="kw">OFFSET</span> <span class="num">4</span>), <span class="str">'audio5.mp3'</span>, <span class="str">'hasta luego'</span>);
+
+<span class="kw">INSERT INTO</span> <span class="tbl">EntradaSenas</span> (id_entrada_senas, id_sesion, url_video, texto_generado)
+<span class="kw">VALUES</span>
+  (<span class="fn">UUID</span>(), (<span class="kw">SELECT</span> id_sesion <span class="kw">FROM</span> <span class="tbl">SesionTraduccion</span> <span class="kw">LIMIT</span> <span class="num">1</span> <span class="kw">OFFSET</span> <span class="num">0</span>), <span class="str">'video1.mp4'</span>, <span class="str">'hola'</span>),
+  (<span class="fn">UUID</span>(), (<span class="kw">SELECT</span> id_sesion <span class="kw">FROM</span> <span class="tbl">SesionTraduccion</span> <span class="kw">LIMIT</span> <span class="num">1</span> <span class="kw">OFFSET</span> <span class="num">1</span>), <span class="str">'video2.mp4'</span>, <span class="str">'adios'</span>),
+  (<span class="fn">UUID</span>(), (<span class="kw">SELECT</span> id_sesion <span class="kw">FROM</span> <span class="tbl">SesionTraduccion</span> <span class="kw">LIMIT</span> <span class="num">1</span> <span class="kw">OFFSET</span> <span class="num">2</span>), <span class="str">'video3.mp4'</span>, <span class="str">'gracias'</span>),
+  (<span class="fn">UUID</span>(), (<span class="kw">SELECT</span> id_sesion <span class="kw">FROM</span> <span class="tbl">SesionTraduccion</span> <span class="kw">LIMIT</span> <span class="num">1</span> <span class="kw">OFFSET</span> <span class="num">3</span>), <span class="str">'video4.mp4'</span>, <span class="str">'bien'</span>),
+  (<span class="fn">UUID</span>(), (<span class="kw">SELECT</span> id_sesion <span class="kw">FROM</span> <span class="tbl">SesionTraduccion</span> <span class="kw">LIMIT</span> <span class="num">1</span> <span class="kw">OFFSET</span> <span class="num">4</span>), <span class="str">'video5.mp4'</span>, <span class="str">'mal'</span>);</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Provee los datos multimedia de entrada (audio y video) junto con las transcripciones generadas. Permite simular el flujo completo de traducción y verificar que la FK a <code>SesionTraduccion</code> funciona correctamente.</div>
+  </div>
+
+  <!-- 2.6 LexicalUni -->
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>2.6 Inserción de Vocabulario (LexicalUni)</h4><span class="sql-label lbl-insert">INSERT</span></div>
+    <pre><span class="kw">INSERT INTO</span> <span class="tbl">LexicalUni</span> (id_LexicalUni, texto, idioma)
+<span class="kw">VALUES</span>
+  (<span class="fn">UUID</span>(), <span class="str">'hola'</span>,         <span class="str">'es_Co'</span>),
+  (<span class="fn">UUID</span>(), <span class="str">'adios'</span>,        <span class="str">'es_Co'</span>),
+  (<span class="fn">UUID</span>(), <span class="str">'gracias'</span>,      <span class="str">'es_Co'</span>),
+  (<span class="fn">UUID</span>(), <span class="str">'buenas noches'</span>,<span class="str">'es_Co'</span>),
+  (<span class="fn">UUID</span>(), <span class="str">'buenos dias'</span>,  <span class="str">'es_Co'</span>);</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Carga el vocabulario básico en español colombiano (es_Co). Estas unidades léxicas son referenciadas por <code>TraduccionDetalle</code> y <code>PalabrasFavoritas</code>, por lo que deben existir antes de insertar en esas tablas.</div>
+  </div>
+
+  <!-- 2.7 Feedback -->
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>2.7 Inserción de Feedback</h4><span class="sql-label lbl-insert">INSERT</span></div>
+    <pre><span class="kw">INSERT INTO</span> <span class="tbl">Feedback</span> (id_feedback, id_usuario, id_sesion, calificacion, comentario, fecha)
+<span class="kw">VALUES</span>
+  (<span class="fn">UUID</span>(), (...usuario_0...), (...sesion_0...), <span class="num">5</span>, <span class="str">'Excelente'</span>,  <span class="fn">NOW</span>()),
+  (<span class="fn">UUID</span>(), (...usuario_1...), (...sesion_1...), <span class="num">4</span>, <span class="str">'Muy bueno'</span>,  <span class="fn">NOW</span>()),
+  (<span class="fn">UUID</span>(), (...usuario_2...), (...sesion_2...), <span class="num">3</span>, <span class="str">'Normal'</span>,     <span class="fn">NOW</span>()),
+  (<span class="fn">UUID</span>(), (...usuario_3...), (...sesion_3...), <span class="num">2</span>, <span class="str">'Regular'</span>,    <span class="fn">NOW</span>()),
+  (<span class="fn">UUID</span>(), (...usuario_4...), (...sesion_4...), <span class="num">1</span>, <span class="str">'Malo'</span>,       <span class="fn">NOW</span>());</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Cubre todo el rango de calificaciones (1 a 5), lo que permite probar consultas con <code>BETWEEN</code> y medir la distribución de satisfacción del usuario en el dashboard de analítica.</div>
+  </div>
+
+</section>
+
+<hr class="divider">
+
+<!-- ══════════════════════════════════
+     SECCIÓN 3 — ACTUALIZACIÓN
+══════════════════════════════════ -->
+<section id="actualizacion">
+  <div class="section-tag">03 — DML</div>
+  <h2 class="section-title">Procedimientos de Actualización</h2>
+  <p class="section-desc">Los UPDATE simulan operaciones reales del sistema: cambios de usuario, transiciones de estado del motor de traducción, correcciones editoriales y sincronización de configuraciones.</p>
+
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>3.1 Renombrar Roles</h4><span class="sql-label lbl-update">UPDATE</span></div>
+    <pre><span class="kw">UPDATE</span> <span class="tbl">Rol</span> <span class="kw">SET</span> nombre_rol = <span class="str">'Administrador'</span> <span class="kw">WHERE</span> nombre_rol = <span class="str">'admin'</span>;
+<span class="kw">UPDATE</span> <span class="tbl">Rol</span> <span class="kw">SET</span> nombre_rol = <span class="str">'Cliente'</span>       <span class="kw">WHERE</span> nombre_rol = <span class="str">'usuario'</span>;</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Mejora la semántica de los roles para mostrar nombres más legibles al usuario final en la interfaz, sin cambiar la lógica de negocio que ya usa los IDs como referencia.</div>
+  </div>
+
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>3.2 Actualizar Datos de Usuarios</h4><span class="sql-label lbl-update">UPDATE</span></div>
+    <pre><span class="kw">UPDATE</span> <span class="tbl">Usuario</span> <span class="kw">SET</span> primer_nombre  = <span class="str">'Juan Actualizado'</span> <span class="kw">WHERE</span> correo = <span class="str">'juan@mail.com'</span>;
+<span class="kw">UPDATE</span> <span class="tbl">Usuario</span> <span class="kw">SET</span> password_hash = <span class="str">'nuevo_hash'</span>       <span class="kw">WHERE</span> correo = <span class="str">'maria@mail.com'</span>;</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Simula el flujo de un usuario que cambia su nombre o restablece su contraseña. Se usa el correo como criterio porque tiene restricción <code>UNIQUE</code>, garantizando que solo se actualiza un registro.</div>
+  </div>
+
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>3.3 Cambios de Estado en Sesiones</h4><span class="sql-label lbl-update">UPDATE</span></div>
+    <pre><span class="kw">UPDATE</span> <span class="tbl">SesionTraduccion</span> <span class="kw">SET</span> estado = <span class="str">'completado'</span>   <span class="kw">WHERE</span> estado = <span class="str">'pendiente'</span>;
+<span class="kw">UPDATE</span> <span class="tbl">SesionTraduccion</span> <span class="kw">SET</span> tipo_traduccion = <span class="str">'senas_a_texto'</span> <span class="kw">WHERE</span> tipo_traduccion = <span class="str">'voz_a_senas'</span>;</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Simula la transición de estados en el ciclo de vida de una traducción. En producción, el motor de traducción actualizaría el estado automáticamente al finalizar el procesamiento.</div>
+  </div>
+
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>3.4 Correcciones en Entradas de Voz</h4><span class="sql-label lbl-update">UPDATE</span></div>
+    <pre><span class="kw">UPDATE</span> <span class="tbl">EntradaVoz</span> <span class="kw">SET</span> texto_generado = <span class="str">'hola mundo'</span>            <span class="kw">WHERE</span> url_audio = <span class="str">'audio1.mp3'</span>;
+<span class="kw">UPDATE</span> <span class="tbl">EntradaVoz</span> <span class="kw">SET</span> url_audio      = <span class="str">'audio_actualizado.mp3'</span> <span class="kw">WHERE</span> url_audio = <span class="str">'audio2.mp3'</span>;</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Representa la corrección manual de una transcripción errónea del STT o la actualización de la ruta del archivo de audio tras una reubicación en el servidor de almacenamiento.</div>
+  </div>
+
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>3.5 Ajustes de Avatar (SignAvatarConfig)</h4><span class="sql-label lbl-update">UPDATE</span></div>
+    <pre><span class="kw">UPDATE</span> <span class="tbl">SignAvatarConfig</span> <span class="kw">SET</span> ritmo_lsc  = <span class="num">3</span>          <span class="kw">WHERE</span> ritmo_lsc  = <span class="num">1</span>;
+<span class="kw">UPDATE</span> <span class="tbl">SignAvatarConfig</span> <span class="kw">SET</span> color_ropa = <span class="str">'amarillo'</span> <span class="kw">WHERE</span> color_ropa = <span class="str">'rojo'</span>;</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Refleja la acción de un usuario que personaliza su avatar desde la interfaz. El campo <code>ritmo_lsc</code> controla el ritmo de animación en LSC. El sistema persiste estas preferencias entre sesiones.</div>
+  </div>
+
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>3.6 Incremento de Contador de Palabras Favoritas</h4><span class="sql-label lbl-update">UPDATE</span></div>
+    <pre><span class="kw">UPDATE</span> <span class="tbl">PalabrasFavoritas</span> <span class="kw">SET</span> veces_usado = veces_usado + <span class="num">1</span> <span class="kw">WHERE</span> veces_usado = <span class="num">5</span>;
+<span class="kw">UPDATE</span> <span class="tbl">PalabrasFavoritas</span> <span class="kw">SET</span> veces_usado = <span class="num">10</span>                <span class="kw">WHERE</span> veces_usado = <span class="num">2</span>;</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Incremento atómico del contador de uso. Cada vez que el usuario usa una unidad léxica favorita en una traducción, el sistema actualiza este contador para alimentar el algoritmo de sugerencias de vocabulario.</div>
+  </div>
+
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>3.7 Actualización de Estado de Tickets de Soporte</h4><span class="sql-label lbl-update">UPDATE</span></div>
+    <pre><span class="kw">UPDATE</span> <span class="tbl">Soporte</span> <span class="kw">SET</span> estado = <span class="str">'resuelto'</span>   <span class="kw">WHERE</span> estado = <span class="str">'pendiente'</span>;
+<span class="kw">UPDATE</span> <span class="tbl">Soporte</span> <span class="kw">SET</span> asunto = <span class="str">'Actualizado'</span> <span class="kw">WHERE</span> asunto = <span class="str">'Bug'</span>;</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Simula el flujo de trabajo del equipo de soporte al cerrar tickets. En producción, este UPDATE sería ejecutado por el agente de soporte al marcar un ticket como resuelto.</div>
+  </div>
+
+</section>
+
+<hr class="divider">
+
+<!-- ══════════════════════════════════
+     SECCIÓN 4 — BORRADO
+══════════════════════════════════ -->
+<section id="borrado">
+  <div class="section-tag">04 — DML</div>
+  <h2 class="section-title">Procedimientos de Borrado</h2>
+  <p class="section-desc">Los DELETE se ejecutan en orden inverso a la creación de tablas (de tablas hijo a tablas padre), respetando las restricciones de integridad referencial.</p>
+
+  <div class="delete-order reveal">
+    <h4>⚠ Orden de Eliminación (tablas hijo → tablas padre)</h4>
+    <div class="delete-flow">
+      <span class="delete-node">EntradaVoz</span>
+      <span class="arrow-right">→</span>
+      <span class="delete-node">EntradaSenas</span>
+      <span class="arrow-right">→</span>
+      <span class="delete-node">TraduccionDetalle</span>
+      <span class="arrow-right">→</span>
+      <span class="delete-node">Feedback</span>
+      <span class="arrow-right">→</span>
+      <span class="delete-node">Soporte</span>
+      <span class="arrow-right">→</span>
+      <span class="delete-node">PalabrasFavoritas</span>
+      <span class="arrow-right">→</span>
+      <span class="delete-node">LogAcceso</span>
+      <span class="arrow-right">→</span>
+      <span class="delete-node">SesionTraduccion</span>
+      <span class="arrow-right">→</span>
+      <span class="delete-node">SignAvatarConfig</span>
+      <span class="arrow-right">→</span>
+      <span class="delete-node">ConfigDispositivo</span>
+      <span class="arrow-right">→</span>
+      <span class="delete-node">Usuario</span>
+      <span class="arrow-right">→</span>
+      <span class="delete-node">Rol · LexicalUni · LogErrorSistema</span>
+    </div>
+  </div>
+
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>Eliminación física en orden seguro (2 registros por tabla)</h4><span class="sql-label lbl-delete">DELETE</span></div>
+    <pre><span class="cm">-- Tablas sin dependencias internas</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">EntradaVoz</span>    <span class="kw">ORDER BY</span> id_entrada_voz   <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">EntradaVoz</span>    <span class="kw">ORDER BY</span> id_entrada_voz   <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">EntradaSenas</span>  <span class="kw">ORDER BY</span> id_entrada_senas <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">EntradaSenas</span>  <span class="kw">ORDER BY</span> id_entrada_senas <span class="kw">LIMIT</span> <span class="num">1</span>;
+
+<span class="cm">-- Tablas asociativas</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">TraduccionDetalle</span>  <span class="kw">ORDER BY</span> id_detalle   <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">TraduccionDetalle</span>  <span class="kw">ORDER BY</span> id_detalle   <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">Feedback</span>           <span class="kw">ORDER BY</span> id_feedback  <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">Feedback</span>           <span class="kw">ORDER BY</span> id_feedback  <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">Soporte</span>            <span class="kw">ORDER BY</span> id_soporte   <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">Soporte</span>            <span class="kw">ORDER BY</span> id_soporte   <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">PalabrasFavoritas</span>  <span class="kw">ORDER BY</span> id_favorito  <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">PalabrasFavoritas</span>  <span class="kw">ORDER BY</span> id_favorito  <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">LogAcceso</span>          <span class="kw">ORDER BY</span> id_log       <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">LogAcceso</span>          <span class="kw">ORDER BY</span> id_log       <span class="kw">LIMIT</span> <span class="num">1</span>;
+
+<span class="cm">-- Tablas que dependen de Usuario</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">SesionTraduccion</span>       <span class="kw">ORDER BY</span> id_sesion       <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">SesionTraduccion</span>       <span class="kw">ORDER BY</span> id_sesion       <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">SignAvatarConfig</span>        <span class="kw">ORDER BY</span> id_sing_avatar  <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">SignAvatarConfig</span>        <span class="kw">ORDER BY</span> id_sing_avatar  <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">ConfiguracionDispositivo</span><span class="kw">ORDER BY</span> id_config       <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">ConfiguracionDispositivo</span><span class="kw">ORDER BY</span> id_config       <span class="kw">LIMIT</span> <span class="num">1</span>;
+
+<span class="cm">-- Tablas raíz</span>
+<span class="kw">DELETE FROM</span> <span class="tbl">Usuario</span>         <span class="kw">ORDER BY</span> id_usuario    <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">Usuario</span>         <span class="kw">ORDER BY</span> id_usuario    <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">Rol</span>             <span class="kw">ORDER BY</span> id_rol        <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">Rol</span>             <span class="kw">ORDER BY</span> id_rol        <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">LexicalUni</span>      <span class="kw">ORDER BY</span> id_LexicalUni <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">LexicalUni</span>      <span class="kw">ORDER BY</span> id_LexicalUni <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">LogErrorSistema</span> <span class="kw">ORDER BY</span> id_error      <span class="kw">LIMIT</span> <span class="num">1</span>;
+<span class="kw">DELETE FROM</span> <span class="tbl">LogErrorSistema</span> <span class="kw">ORDER BY</span> id_error      <span class="kw">LIMIT</span> <span class="num">1</span>;</pre>
+    <div class="sql-reason"><strong>¿Por qué este orden?</strong> Eliminar primero las tablas hijo evita errores de integridad referencial. Se usan 2 DELETE con <code>LIMIT 1</code> en lugar de <code>LIMIT 2</code> para evitar eliminaciones masivas accidentales. En producción se preferiría soft delete mediante <code>deleted_at</code>.</div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ══════════════════════════════════
+     SECCIÓN 5 — MERGE
+══════════════════════════════════ -->
+<section id="merge">
+  <div class="section-tag">05 — DML Avanzado</div>
+  <h2 class="section-title">Operaciones MERGE (Upsert)</h2>
+  <p class="section-desc">El patrón <code>INSERT ... ON DUPLICATE KEY UPDATE</code> permite insertar un registro si no existe, o actualizarlo si ya existe. Ideal para sincronización de datos sin generar duplicados.</p>
+
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>5.1 Merge de Usuario</h4><span class="sql-label lbl-merge">MERGE</span></div>
+    <pre><span class="kw">INSERT INTO</span> <span class="tbl">Usuario</span> (id_usuario, id_rol, primer_nombre, primer_apellido, telefono, correo, password_hash)
+<span class="kw">SELECT</span> id_usuario, id_rol, primer_nombre, primer_apellido, telefono, correo, password_hash
+<span class="kw">FROM</span> <span class="tbl">Usuario</span> <span class="kw">AS</span> nuevo
+<span class="kw">ON DUPLICATE KEY UPDATE</span>
+  primer_nombre  = nuevo.primer_nombre,
+  primer_apellido= nuevo.primer_apellido,
+  telefono       = nuevo.telefono,
+  password_hash  = nuevo.password_hash,
+  id_rol         = nuevo.id_rol;</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Permite sincronizar perfiles de usuario desde un sistema externo (ej. SSO corporativo) sin duplicar registros. Si el usuario ya existe, solo se actualizan los campos relevantes; si no existe, se crea.</div>
+  </div>
+
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>5.2 Merge de LexicalUni</h4><span class="sql-label lbl-merge">MERGE</span></div>
+    <pre><span class="kw">INSERT INTO</span> <span class="tbl">LexicalUni</span> (id_LexicalUni, texto, idioma)
+<span class="kw">SELECT</span> id_LexicalUni, texto, idioma <span class="kw">FROM</span> <span class="tbl">LexicalUni</span> <span class="kw">AS</span> nueva
+<span class="kw">ON DUPLICATE KEY UPDATE</span>
+  texto  = nueva.texto,
+  idioma = nueva.idioma;</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Facilita la carga incremental del diccionario de señas desde fuentes externas (ej. corpus académicos de LSC) sin eliminar las entradas existentes.</div>
+  </div>
+
+  <div class="sql-block reveal">
+    <div class="sql-header"><h4>5.3 Merge de SignAvatarConfig</h4><span class="sql-label lbl-merge">MERGE</span></div>
+    <pre><span class="kw">INSERT INTO</span> <span class="tbl">SignAvatarConfig</span>
+  (id_sing_avatar, id_usuario, estilo_avatar, color_piel, color_ropa, tamano_avatar, ritmo_lsc)
+<span class="kw">SELECT</span> id_sing_avatar, id_usuario, estilo_avatar, color_piel, color_ropa, tamano_avatar, ritmo_lsc
+<span class="kw">FROM</span> <span class="tbl">SignAvatarConfig</span> <span class="kw">AS</span> nuevo_av
+<span class="kw">ON DUPLICATE KEY UPDATE</span>
+  estilo_avatar = nuevo_av.estilo_avatar,
+  color_piel    = nuevo_av.color_piel,
+  color_ropa    = nuevo_av.color_ropa,
+  tamano_avatar = nuevo_av.tamano_avatar,
+  ritmo_lsc     = nuevo_av.ritmo_lsc;</pre>
+    <div class="sql-reason"><strong>¿Por qué?</strong> Sincroniza la configuración del avatar desde la app móvil al servidor central. Si el usuario ya tiene configuración guardada, se actualiza; si no, se crea por primera vez.</div>
+  </div>
+
+</section>
+
+<hr class="divider">
+
+<!-- ══════════════════════════════════
+     SECCIÓN 6 — CONSULTAS SELECT
+══════════════════════════════════ -->
+<section id="consultas">
+  <div class="section-tag">06 — Consultas</div>
+  <h2 class="section-title">10 Consultas SELECT con Operadores Avanzados</h2>
+  <p class="section-desc">Cada consulta utiliza operadores avanzados de SQL (LIKE, BETWEEN, IN, IS NULL) para extraer información relevante del sistema SignBridge.</p>
+
+  <!-- Q1 -->
+  <div class="query-card reveal">
+    <div class="query-header">
+      <div class="query-num">01</div>
+      <h4>Usuarios por dominio de correo</h4>
+      <span class="op-badge">LIKE</span>
+    </div>
+    <pre><span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="tbl">Usuario</span>
+<span class="kw">WHERE</span> correo <span class="op-like">LIKE</span> <span class="str">'%@mail.com'</span>;</pre>
+    <div class="sql-reason"><strong>Relevancia:</strong> Segmenta usuarios por proveedor de correo electrónico. Útil para campañas de marketing dirigidas a un dominio corporativo específico, o migración de cuentas cuando un proveedor cierra. El comodín <code>%</code> antes del <code>@</code> captura cualquier nombre de usuario.</div>
+  </div>
+
+  <!-- Q2 -->
+  <div class="query-card reveal">
+    <div class="query-header">
+      <div class="query-num">02</div>
+      <h4>Vocabulario en español (con prefijo)</h4>
+      <span class="op-badge">LIKE</span>
+    </div>
+    <pre><span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="tbl">LexicalUni</span>
+<span class="kw">WHERE</span> idioma <span class="op-like">LIKE</span> <span class="str">'es%'</span>;</pre>
+    <div class="sql-reason"><strong>Relevancia:</strong> Filtra todas las unidades léxicas en variantes del español (es, es_Co, es_MX, es_AR) usando el prefijo <code>'es'</code>. Fundamental para el motor de traducción cuando necesita cargar solo el vocabulario del idioma activo del usuario.</div>
+  </div>
+
+  <!-- Q3 -->
+  <div class="query-card reveal">
+    <div class="query-header">
+      <div class="query-num">03</div>
+      <h4>Feedback positivo (calificaciones altas)</h4>
+      <span class="op-badge">BETWEEN</span>
+    </div>
+    <pre><span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="tbl">Feedback</span>
+<span class="kw">WHERE</span> calificacion <span class="op-between">BETWEEN</span> <span class="num">4</span> <span class="kw">AND</span> <span class="num">5</span>;</pre>
+    <div class="sql-reason"><strong>Relevancia:</strong> Identifica usuarios altamente satisfechos. Estos registros se usan para solicitar testimonios, identificar funcionalidades exitosas o seleccionar usuarios para beta testing. <code>BETWEEN</code> es más legible que <code>&gt;= 4 AND &lt;= 5</code>.</div>
+  </div>
+
+  <!-- Q4 -->
+  <div class="query-card reveal">
+    <div class="query-header">
+      <div class="query-num">04</div>
+      <h4>Feedback negativo ordenado por gravedad</h4>
+      <span class="op-badge">BETWEEN + ORDER BY</span>
+    </div>
+    <pre><span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="tbl">Feedback</span>
+<span class="kw">WHERE</span> calificacion <span class="op-between">BETWEEN</span> <span class="num">1</span> <span class="kw">AND</span> <span class="num">2</span>
+<span class="kw">ORDER BY</span> calificacion <span class="kw">ASC</span>;</pre>
+    <div class="sql-reason"><strong>Relevancia:</strong> Detecta las peores evaluaciones del servicio, ordenadas de más grave a menos grave. Permite al equipo de producto priorizar la revisión de comentarios negativos y tomar acciones correctivas con mayor impacto.</div>
+  </div>
+
+  <!-- Q5 -->
+  <div class="query-card reveal">
+    <div class="query-header">
+      <div class="query-num">05</div>
+      <h4>Sesiones con problemas (no completadas)</h4>
+      <span class="op-badge">IN</span>
+    </div>
+    <pre><span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="tbl">SesionTraduccion</span>
+<span class="kw">WHERE</span> estado <span class="op-in">IN</span> (<span class="str">'pendiente'</span>, <span class="str">'error'</span>);</pre>
+    <div class="sql-reason"><strong>Relevancia:</strong> Identifica todas las sesiones que no han sido completadas exitosamente. Permite al equipo técnico monitorear procesos atascados y al sistema enviar notificaciones o reintentar el procesamiento. <code>IN</code> es más eficiente y legible que múltiples condiciones <code>OR</code>.</div>
+  </div>
+
+  <!-- Q6 -->
+  <div class="query-card reveal">
+    <div class="query-header">
+      <div class="query-num">06</div>
+      <h4>Auditoría de accesos legítimos</h4>
+      <span class="op-badge">IN + ORDER BY DESC</span>
+    </div>
+    <pre><span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="tbl">LogAcceso</span>
+<span class="kw">WHERE</span> tipo_acceso <span class="op-in">IN</span> (<span class="str">'login'</span>, <span class="str">'logout'</span>)
+<span class="kw">ORDER BY</span> fecha_hora <span class="kw">DESC</span>;</pre>
+    <div class="sql-reason"><strong>Relevancia:</strong> Extrae los accesos legítimos ordenados del más reciente al más antiguo. Permite al equipo de seguridad auditar actividad y detectar sesiones muy largas (login sin logout correspondiente). El <code>DESC</code> muestra primero los eventos más recientes.</div>
+  </div>
+
+  <!-- Q7 -->
+  <div class="query-card reveal">
+    <div class="query-header">
+      <div class="query-num">07</div>
+      <h4>Feedback sin usuario asociado (huérfanos)</h4>
+      <span class="op-badge">IS NULL</span>
+    </div>
+    <pre><span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="tbl">Feedback</span>
+<span class="kw">WHERE</span> id_usuario <span class="op-null">IS NULL</span>;</pre>
+    <div class="sql-reason"><strong>Relevancia:</strong> Detecta registros de feedback huérfanos cuyo usuario fue eliminado y quedó en <code>NULL</code> por <code>ON DELETE SET NULL</code>. Permite identificar inconsistencias o programar tareas de limpieza periódica. <code>IS NULL</code> es obligatorio; el operador <code>= NULL</code> no funciona en SQL.</div>
+  </div>
+
+  <!-- Q8 -->
+  <div class="query-card reveal">
+    <div class="query-header">
+      <div class="query-num">08</div>
+      <h4>Tickets de soporte activos</h4>
+      <span class="op-badge">OR</span>
+    </div>
+    <pre><span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="tbl">Soporte</span>
+<span class="kw">WHERE</span> estado = <span class="str">'pendiente'</span>
+   <span class="kw">OR</span> estado = <span class="str">'en_proceso'</span>;</pre>
+    <div class="sql-reason"><strong>Relevancia:</strong> Obtiene todos los tickets que aún requieren atención. En un panel de administración, esta consulta alimentaría la cola de trabajo del agente de soporte, mostrando solo los casos abiertos y excluyendo los ya resueltos.</div>
+  </div>
+
+  <!-- Q9 -->
+  <div class="query-card reveal">
+    <div class="query-header">
+      <div class="query-num">09</div>
+      <h4>Dispositivos offline con Android reciente</h4>
+      <span class="op-badge">AND + LIKE</span>
+    </div>
+    <pre><span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="tbl">ConfiguracionDispositivo</span>
+<span class="kw">WHERE</span> uso_offline = <span class="kw">TRUE</span>
+  <span class="kw">AND</span> version_android <span class="op-like">LIKE</span> <span class="str">'Android 1%'</span>;</pre>
+    <div class="sql-reason"><strong>Relevancia:</strong> Identifica usuarios con modo offline activado en versiones recientes de Android (10 en adelante). Permite al equipo de desarrollo priorizar pruebas de compatibilidad offline en los dispositivos más utilizados por este segmento.</div>
+  </div>
+
+  <!-- Q10 -->
+  <div class="query-card reveal">
+    <div class="query-header">
+      <div class="query-num">10</div>
+      <h4>Palabras favoritas más frecuentes</h4>
+      <span class="op-badge">&gt; + ORDER BY DESC</span>
+    </div>
+    <pre><span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="tbl">PalabrasFavoritas</span>
+<span class="kw">WHERE</span> veces_usado &gt; <span class="num">2</span>
+<span class="kw">ORDER BY</span> veces_usado <span class="kw">DESC</span>;</pre>
+    <div class="sql-reason"><strong>Relevancia:</strong> Identifica el vocabulario más utilizado por los usuarios. Estos datos alimentan el algoritmo de predicción de palabras y la personalización de sugerencias en la interfaz de traducción. Ordenado de mayor a menor frecuencia para priorizar las palabras con mayor impacto.</div>
+  </div>
+
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <span>SignBridge</span> — Base de Datos · MySQL 8+ · InnoDB · 15 tablas · SENA ADS
+</footer>
+
+<script>
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.08 });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
